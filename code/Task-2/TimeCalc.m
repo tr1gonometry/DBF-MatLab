@@ -1,16 +1,18 @@
 %% Marco Murphy
 
-% Time to complete 5 laps
+% ------------------------+
+% Time to complete 5 laps |
+% DBF loop rules          |
+% ------------------------+
+% drag                    |
+% turning mechanics       |
+% cruise speed            |
+% takeoff weight          |
+% thrust                  |
+% ------------------------+
 
-% DBF loop rules
 
-% drag
-% turning mechanics
-% cruise speed
-% takeoff weight
-% thrust
-
-
+% Flight Plan (5 lp)
 %    :                     : 
 %    :  360 here (tp mid)  :
 %   /: - - - - -:- - - - - :\
