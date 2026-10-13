@@ -11,8 +11,7 @@
 % thrust                  |
 % ------------------------+
 
-
-% Flight Plan (5 lp)
+%       Flight Plan (5 lp)
 %    :                     : 
 %    :  360 here (tp mid)  :
 %   /: - - - - -:- - - - - :\
