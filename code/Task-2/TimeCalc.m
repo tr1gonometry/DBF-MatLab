@@ -61,20 +61,22 @@ fprintf("\n");
 % matlab is stupid and it wont stop you
 CRUISE_DIST = 500;           % meters (distance to middle of a cruise!)
 DRAG_COEFF  = 0.01;          % dummy value
-ACCEL       = thrust / mass; % m / s^2
+ACCEL_CRAFT = thrust / mass; % m / s^2
 ACCEL_G     = 9.81;          % m / s^2
 AIR_DENS_SL = 1.2250;        % kg / m^3 (at sea level)
 FRONT_AREA  = 0.5;           % m^2 dummy value
-BANK_ANGLE  = 10;            % degrees dummy value 
+BANK_ANGLE  = 10;            % degrees dummy value
+TURN_ANGLE  = 90;            % degrees
 
 fprintf("using constants (modify in code): \n");
 fprintf("CRUISE_DIST = %0.2f m\n", CRUISE_DIST);
 fprintf("DRAG_COEFF  = %0.2f\n", DRAG_COEFF);
-fprintf("ACCEL       = %0.2f m/s^2\n", ACCEL);
+fprintf("ACCEL_CRAFT = %0.2f m/s^2\n", ACCEL_CRAFT);
 fprintf("ACCEL_GRAV  = %0.2f m/s^2\n", ACCEL_G);
 fprintf("AIR_DENS_SL = %0.4f kg/m^3\n", AIR_DENS_SL);
 fprintf("FRONT_AREA  = %0.2f m^2\n", FRONT_AREA);
 fprintf("BANK_ANGLE  = %0.2f deg\n", BANK_ANGLE);
+fprintf("TURN_ANGLE  = %0.2f deg\n", TURN_ANGLE);
 fprintf("\n");
 
 function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, cruise, FRONT_AREA)
@@ -87,52 +89,45 @@ function accelDrag = accelDrag(FORCE_DRAG, mass)
     % im not citing this big dawg, you can do F = ma, its OK
 end
 
-function turnRadius = turnRadius(cruise, ACCEL_G, BANK_ANGLE)
-    turnRadius = (cruise^2) / (ACCEL_G * tan(BANK_ANGLE));
+function findTurnRadius = findTurnRadius(cruise, ACCEL_G, BANK_ANGLE)
+    findTurnRadius = (cruise^2) / (ACCEL_G * tan(BANK_ANGLE));
     % https://www.flightschoolusa.com/bank-angle-1-ultimate-guide-to-performance/
 end
 
-time = 0;
+totalTime = 0;
 
-% find drag force (at basic cruise speed)
-fprintf("force of drag at %0.0fm/s found: %0.2f\n", cruise, forceDrag(AIR_DENS_SL, DRAG_COEFF, cruise, FRONT_AREA))
-
-% find accel of drag (at basic cruise speed)
-fprintf("accel of drag at %0.0fm/s found: %0.2f\n", cruise, accelDrag(forceDrag(AIR_DENS_SL, DRAG_COEFF, cruise, FRONT_AREA), mass))
-
-% find turn radius
-fprintf("turn radius at %0.0fm/s found: %0.2f\n", cruise, turnRadius(cruise, ACCEL_G, BANK_ANGLE))
 
 % find turn time
-
-% ---- READ THIS! ----
-% -- LIKE SERIOUSLY --
-% -- ITS IMPORTANT! --
-% HEY REMEMBER THAT DRAG WILL IMPACT TAKEOFF SPEED AND SINCE DRAG IS
-% VARIABLE BASED ON SPEED THAT WILL BE AN ANNOYING CALCULATION
+turnRadius = findTurnRadius(cruise, ACCEL_G, BANK_ANGLE);
+arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
+fprintf("arc length found: %0.2f m\n", arcLength);
 
 % find takeoff time
 v = 0;
 v_prev = 0;
-t_step = 0.001; % increase this step for more accurate time calcs
+t_step = 0.001; % increase this step for more accurate time calc
+distToCruise = 0;
 timeToCruise = 0;
 % kinda hacky workaround for having compounding functions :3
 while (v < cruise)
     v_prev = v;
+    distToCruise = distToCruise + (v_prev * t_step);
     v = v + ((thrust - forceDrag(AIR_DENS_SL, DRAG_COEFF, v, FRONT_AREA)) / mass) * t_step;
     timeToCruise = timeToCruise + t_step;
     % added just in case drag equalizes with thrust and it stops
     if (v >= cruise)
         fprintf("time to cruise from 0 is: %0.3fs\n", timeToCruise);
+        fprintf("traveled: %0.2f m\n", distToCruise);
     elseif (v_prev == v)
         v = cruise; % break out of loop
         fprintf("[ERR] could not compute time to cruise, drag may be too powerful :(\n");
         fprintf("max speed achieved: %0.2f after %0.3fs\n", v_prev,timeToCruise);
+        fprintf("traveled: %0.2f m\n", distToCruise);
     end
 end
-
-% !! CRUISE STRAIGHTS WILL ALSO BE IMPACTED BY DRAG!!! (i think???)
 
 % find cruise time
 timeStraight = CRUISE_DIST / cruise;
 fprintf("cruise time over %0.0fm found: %0.2fs\n", CRUISE_DIST, timeStraight)
+fprintf("total cruise time is: %0.2fs\n", timeStraight * 18)
+% 18 = 20 straight (500m) sections minus 2 for takeoff / landing (18=20-2)
