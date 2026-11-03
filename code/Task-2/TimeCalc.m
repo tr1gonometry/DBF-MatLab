@@ -1,4 +1,4 @@
-%% Marco Murphy
+% By Marco Murphy and 
 clc, clear, format compact
 
 % + - - - - - - - - - - - - +
@@ -54,8 +54,17 @@ clc, clear, format compact
 % for testing i have been using 100, 5, and 100 respectively
 % is that accurate? god no probably not. but its consistent.
 speed  = input("cruise speed (m/s): ");
+while (speed <= 0)
+    speed = input("must be n > 0... ");
+end
 mass   = input("takeoff mass  (kg): ");
+while (mass <= 0)
+    mass = input("must be n > 0... ");
+end
 thrust = input("applied thrust (N): ");
+while (thrust <= 0)
+    thrust = input("must be n > 0... ");
+end
 fprintf("\n");
 
 % variables in full uppercase are constants
@@ -89,7 +98,7 @@ function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, speed, FRONT_AREA)
 end
 
 function accelDrag = accelDrag(FORCE_DRAG, mass)
-    accelDrag = FORCE_DRAG/mass;
+    accelDrag = (-1) * (FORCE_DRAG / mass);
     % im not citing this big dawg, you can do F = ma, its OK
 end
 
@@ -105,7 +114,7 @@ totalTime = 0;
 turnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE);
 arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
 % 180 deg = pi rad
-turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed) * (180/pi);
+turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed) * (180 / pi);
 fprintf("[TRN] turn radius found: %0.2f m\n", turnRadius);
 fprintf("      arc length found: %0.2f m\n", arcLength);
 fprintf("      turn rate found: %0.2frad/s\n", turnRate);
@@ -134,7 +143,7 @@ while (v < speed)
     elseif (v_prev == v)
         v = speed; % break out of loop
         fprintf("[TKF] could not compute time to speed, drag may be too powerful :(\n");
-        fprintf("[ERR] max speed achieved: %0.2f after %0.3fs\n", v_prev,timeToCruise);
+        fprintf("{ERR} max speed achieved: %0.2f after %0.3fs\n", v_prev,timeToCruise);
         fprintf("      traveled: %0.2f m\n", distToCruise);
         fprintf("\n");
     end
@@ -142,7 +151,7 @@ while (v < speed)
     if (distToCruise > CRUISE_DIST)
         v = speed;
         fprintf("[TKF] takeoff distance exceeds cruise space of %0.0f m!\n", CRUISE_DIST)
-        fprintf("[ERR] retry with new values!\n");
+        fprintf("{ERR} retry with new values!\n");
         fprintf("\n");
     end
 end
@@ -164,3 +173,9 @@ fprintf("[TOT] total time: %0.2fs\n", totalTime);
 
 % im tired ill look at this tmr -- hopefully i can figure out the turn
 % calcs then. its basically the last part i need to do
+% lol i did not, in fact, "look at this tmr"
+% so real for that
+
+% testing .gitignore to ignore autosaves (.asv)
+
+% add safety for empty variables
