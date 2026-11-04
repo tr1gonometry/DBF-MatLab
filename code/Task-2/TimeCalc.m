@@ -50,19 +50,21 @@ clc, clear, format compact
 % v = a * t
 % force_drag = AIR_DENS_SL * DRAG_COEFF * 1/2 * V^2 * FRONT_AREA
 % turn_radius = V^2 / (G * tan(BANK_ANGLE))
+% v = r * w (angular vel)
+% w = theta / t
 
 % for testing i have been using 100, 5, and 100 respectively
 % is that accurate? god no probably not. but its consistent.
 speed  = input("cruise speed (m/s): ");
-while (any(speed) == 0)
+while (~any(speed))
     speed = input("must be n > 0... ");
 end
 mass   = input("takeoff mass  (kg): ");
-while (any(mass) == 0)
+while (~any(mass))
     mass = input("must be n > 0... ");
 end
 thrust = input("applied thrust (N): ");
-while (any(thrust) == 0)
+while (~any(thrust))
     thrust = input("must be n > 0... ");
 end
 fprintf("\n");
@@ -104,17 +106,6 @@ end
 
 totalTime = 0;
 
-
-% find turn time
-turnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE);
-arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
-% 180 deg = pi rad
-turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed) * (180 / pi);
-fprintf("[TRN] turn radius found: %0.2f m\n", turnRadius);
-fprintf("      arc length found: %0.2f m\n", arcLength);
-fprintf("      turn rate found: %0.2frad/s\n", turnRate);
-fprintf("\n");
-
 % find takeoff time
 v = 0;
 v_prev = 0;
@@ -147,11 +138,12 @@ while (v < speed)
         v = speed;
         fprintf("[TKF] takeoff distance exceeds cruise space of %0.0f m!\n", CRUISE_DIST)
         fprintf("{ERR} retry with new values!\n");
+        fprintf("      traveled %0.2f\n", distToCruise);
         fprintf("\n");
     end
 end
 % deallocate variables that are no longer used
-clearvars v v_prev
+clearvars v v_prev t_step
 
 % find cruise time
 timeStraight = CRUISE_DIST / speed;
@@ -160,10 +152,24 @@ fprintf("      total cruise time is: %0.2fs\n", timeStraight * 18)
 fprintf("\n");
 % 18 = 20 straight (500m) sections minus 2 for takeoff / landing (18=20-2)
 
-% add time of cruise sections
-totalTime = totalTime + timeStraight * 18;
+% find turn time
+turnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE);
+arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
+% 180 deg = pi rad
+turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed);
+fprintf("[TRN] turn radius found: %0.2f m\n", turnRadius);
+fprintf("      arc length found: %0.2f m\n", arcLength);
+fprintf("      turn rate found: %0.2frad/s\n", turnRate);
+fprintf("      turn rate found: %0.2fdeg/s\n", rad2deg(turnRate));
+% double check those turn values just in case
+turnTime = (turnRadius * TURN_ANGLE) / speed
+fprintf("      turn time fund: %0.2f s")
+fprintf("\n");
+
 % add time of takeoff stretch
 totalTime = totalTime + timeToCruise;
+% add time of cruise sections
+totalTime = totalTime + timeStraight * 18;
 
 % total time of flight
 fprintf("[TOT] total time: %0.2fs\n", totalTime);
