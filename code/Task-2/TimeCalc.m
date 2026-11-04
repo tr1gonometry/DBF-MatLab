@@ -54,15 +54,15 @@ clc, clear, format compact
 % for testing i have been using 100, 5, and 100 respectively
 % is that accurate? god no probably not. but its consistent.
 speed  = input("cruise speed (m/s): ");
-while (speed <= 0)
+while (any(speed) == 0)
     speed = input("must be n > 0... ");
 end
 mass   = input("takeoff mass  (kg): ");
-while (mass <= 0)
+while (any(mass) == 0)
     mass = input("must be n > 0... ");
 end
 thrust = input("applied thrust (N): ");
-while (thrust <= 0)
+while (any(thrust) == 0)
     thrust = input("must be n > 0... ");
 end
 fprintf("\n");
@@ -95,11 +95,6 @@ fprintf("\n");
 function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, speed, FRONT_AREA)
     forceDrag = 1/2 * AIR_DENS_SL * DRAG_COEFF * (speed^2) * FRONT_AREA;
     % https://en.wikipedia.org/wiki/Drag_equation#
-end
-
-function accelDrag = accelDrag(FORCE_DRAG, mass)
-    accelDrag = (-1) * (FORCE_DRAG / mass);
-    % im not citing this big dawg, you can do F = ma, its OK
 end
 
 function findTurnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE)
@@ -137,7 +132,7 @@ while (v < speed)
     % this might never execute now because it gets overwhelmed by the
     % takeoff space check, but ill leave it just in case
     if (v >= speed)
-        fprintf("[TKF] time to speed from 0 is: %0.3fs\n", timeToCruise);
+        fprintf("[TKF] time to %d m/s from 0 is: %0.3fs\n", speed, timeToCruise);
         fprintf("      traveled: %0.2f m\n", distToCruise);
         fprintf("\n");
     elseif (v_prev == v)
@@ -155,6 +150,8 @@ while (v < speed)
         fprintf("\n");
     end
 end
+% deallocate variables that are no longer used
+clearvars v v_prev
 
 % find cruise time
 timeStraight = CRUISE_DIST / speed;
@@ -170,12 +167,3 @@ totalTime = totalTime + timeToCruise;
 
 % total time of flight
 fprintf("[TOT] total time: %0.2fs\n", totalTime);
-
-% im tired ill look at this tmr -- hopefully i can figure out the turn
-% calcs then. its basically the last part i need to do
-% lol i did not, in fact, "look at this tmr"
-% so real for that
-
-% testing .gitignore to ignore autosaves (.asv)
-
-% add safety for empty variables

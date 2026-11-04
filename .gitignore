@@ -1,2 +1,2 @@
-# ignore matlab .asv files
+# ignore matlab .asv (autosave) files
 *.asv
