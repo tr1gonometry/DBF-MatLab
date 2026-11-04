@@ -52,6 +52,7 @@ clc, clear, format compact
 % turn_radius = V^2 / (G * tan(BANK_ANGLE))
 % v = r * w (angular vel)
 % w = theta / t
+% 180 deg = 1 * pi rad
 
 % for testing i have been using 100, 5, and 100 respectively
 % is that accurate? god no probably not. but its consistent.
@@ -82,6 +83,12 @@ FRONT_AREA  = 0.5;           % m^2 dummy value
 BANK_ANGLE  = 20;            % degrees dummy value
 TURN_ANGLE  = 90;            % degrees
 
+%
+% debug mode will include some extra prints to show code running
+DEBUG = false;
+% change this variable to enable / disable debug mode
+%
+
 fprintf("using constants (modify in code): \n");
 fprintf("CRUISE_DIST = %0.0f m         | ", CRUISE_DIST);
 fprintf("DRAG_COEFF  = %0.2f \n", DRAG_COEFF);
@@ -91,6 +98,11 @@ fprintf("AIR_DENS_SL = %0.4f kg/m^3 | ", AIR_DENS_SL);
 fprintf("FRONT_AREA  = %0.2f m^2\n", FRONT_AREA);
 fprintf("BANK_ANGLE  = %0.0f deg        | ", BANK_ANGLE);
 fprintf("TURN_ANGLE  = %0.0f deg\n", TURN_ANGLE);
+if (DEBUG)
+    fprintf("debug mode: ENABLED\n");
+else
+    fprintf("debug mode: DISABLED\n");
+end
 fprintf("\n");
 
 % WHAT THE FUCK IS A GLOBAL VARIABLE, IN THIS HOUSE WE PASS IN EVERYTHING
@@ -155,21 +167,32 @@ fprintf("\n");
 % find turn time
 turnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE);
 arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
-% 180 deg = pi rad
 turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed);
-fprintf("[TRN] turn radius found: %0.2f m\n", turnRadius);
-fprintf("      arc length found: %0.2f m\n", arcLength);
-fprintf("      turn rate found: %0.2frad/s\n", turnRate);
-fprintf("      turn rate found: %0.2fdeg/s\n", rad2deg(turnRate));
+% debug prints for turning
+if (DEBUG)
+    fprintf("{DBG} turn radius found: %0.2f m\n", turnRadius);
+    fprintf("      arc length found: %0.2f m\n", arcLength);
+    fprintf("      turn rate found: %0.2frad/s\n", turnRate);
+end
 % double check those turn values just in case
 turnTime = (turnRadius * TURN_ANGLE) / speed;
-fprintf("      turn time found: %0.2f s\n", turnTime);
+fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
+fprintf("      total turn time found: %0.2f s\n", turnTime * 10)
 fprintf("\n");
+% 10 = 2 turns per lap, over 5 laps (10=2*5)
 
-% add time of takeoff stretch
+%
+% HEY CHECK THOSE TURN TIMES, IT SHOULD NOT BE TAKING OVER AN HOUR TO
+% TURN!!!
+%
+
+% add time of takeoff stretch (1)
 totalTime = totalTime + timeToCruise;
-% add time of cruise sections
+% add time of cruise sections (18)
 totalTime = totalTime + timeStraight * 18;
+% add time of the turn sections (10)
+totalTime = totalTime + turnTime * 10;
 
 % total time of flight
 fprintf("[TOT] total time: %0.2fs\n", totalTime);
+fprintf("      total time: %0.2fm\n", totalTime / 60);
