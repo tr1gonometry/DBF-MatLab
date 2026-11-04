@@ -105,7 +105,8 @@ else
 end
 fprintf("\n");
 
-% WHAT THE FUCK IS A GLOBAL VARIABLE, IN THIS HOUSE WE PASS IN EVERYTHING
+% WHAT THE FUCK IS A GLOBAL VARIABLE, IN THIS HOUSE WE PASS EVERYTHING IN
+% oh yeah and as stated with the constants, I AM NOT LEARNING CLASSES YET
 function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, speed, FRONT_AREA)
     forceDrag = 1/2 * AIR_DENS_SL * DRAG_COEFF * (speed^2) * FRONT_AREA;
     % https://en.wikipedia.org/wiki/Drag_equation#
