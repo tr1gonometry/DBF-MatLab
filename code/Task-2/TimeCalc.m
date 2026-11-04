@@ -162,8 +162,8 @@ fprintf("      arc length found: %0.2f m\n", arcLength);
 fprintf("      turn rate found: %0.2frad/s\n", turnRate);
 fprintf("      turn rate found: %0.2fdeg/s\n", rad2deg(turnRate));
 % double check those turn values just in case
-turnTime = (turnRadius * TURN_ANGLE) / speed
-fprintf("      turn time fund: %0.2f s")
+turnTime = (turnRadius * TURN_ANGLE) / speed;
+fprintf("      turn time found: %0.2f s\n", turnTime);
 fprintf("\n");
 
 % add time of takeoff stretch
