@@ -1,28 +1,27 @@
 % By Marco Murphy and 
 clc, clear, format compact
 
-% + - - - - - - - - - - - - +
-% | Time to complete 5 laps |
-% | DBF loop rules          |
-% +-------------------------+
-% | drag                    |
-% | turning mechanics       |
-% | cruise speed            |
-% | takeoff weight          |
-% | thrust                  |
-% + - - - - - - - - - - - - +
+% Project requirements
+% Time to complete 5 laps
+% (DBF loop rules)
+% drag
+% turning mechanics
+% cruise speed
+% takeoff weight
+% thrust
 
-%       Flight Plan (5 lp)
+% Flight Plan (5 lp)
 %    :                     : 
 %    :  360 here (tp mid)  :
 %   /: - - - - -:- - - - - :\
 %  ( : start line (bt mid) : )
 %   \: _:_ _ _ _:_ _ _ _:_ :/
 %    :  :--runway here--:  :
-%    :   500m   :   500m   : * 500m to turn from center
+%    :   500m   :   500m   :
 %    :                     :
+% * 500m to turn from center
 
-% ok lets treat the flight as a few steps
+% Flight as a few steps
 % REPEAT 5x
 % 1a. takeoff stretch (Lap 1 only)
 % 1b. cruise 1 (500m)
@@ -34,7 +33,7 @@ clc, clear, format compact
 % 7a. landing stretch (Lap 5 only) -- ignore landing for now (yippee!)
 % 7b. cruise 4 (500m) --> to 1
 
-% assumptions
+% Assumptions
 % 1. ignore landing
 % 2. assume optimal flight (no wind)
 % 3. assume constantly moving at cruise speed during straights
@@ -44,12 +43,12 @@ clc, clear, format compact
 %    cruise (thrust must be throttled or drag must cancel out accel)
 % n. lots of other assumptions probably :3
 
-% formulas
+% Formulas
 % d = r * t
 % f = m * a
 % v = a * t
-% force_drag = AIR_DENS_SL * DRAG_COEFF * 1/2 * V^2 * FRONT_AREA
-% turn_radius = V^2 / (G * tan(BANK_ANGLE))
+% force_drag = zAIR_DENS_SL * zDRAG_COEFF * 1/2 * V^2 * zFRONT_AREA
+% turn_radius = V^2 / (G * tan(zBANK_ANGLE))
 % w = theta / t (angular velocity)
 % v = r * w (convert ang to linear)
 % 180 deg = 1 * pi rad
@@ -57,15 +56,15 @@ clc, clear, format compact
 % for testing i have been using 100, 5, and 100 respectively
 % is that accurate? god no probably not. but its consistent.
 speed  = input("cruise speed (m/s): ");
-while (~any(speed))
+while (~any(speed) || speed < 0)
     speed = input("must be n > 0... ");
 end
 mass   = input("takeoff mass  (kg): ");
-while (~any(mass))
+while (~any(mass) || mass < 0)
     mass = input("must be n > 0... ");
 end
 thrust = input("applied thrust (N): ");
-while (~any(thrust))
+while (~any(thrust) || thrust < 0)
     thrust = input("must be n > 0... ");
 end
 fprintf("\n");
@@ -74,66 +73,69 @@ fprintf("\n");
 % do not modify them during execution
 % matlab is stupid and it wont stop you
 % and i REFUSE to learn matlab classes
-CRUISE_DIST = 500;           % meters (distance to middle of a cruise!)
-DRAG_COEFF  = 0.01;          % dummy value
-ACCEL_G     = 9.81;          % m / s^2
-AIR_DENS_SL = 1.2250;        % kg / m^3 (at sea level)
-FRONT_AREA  = 0.5;           % m^2 dummy value
-BANK_ANGLE  = 20;            % degrees dummy value
-TURN_ANGLE  = 180;           % degrees
+zCRUISE_DIST = 500;    % meters (distance to middle of a cruise!)
+zDRAG_COEFF  = 0.01;   % dummy value
+zACCEL_G     = 9.81;   % m / s^2
+zAIR_DENS_SL = 1.2250; % kg / m^3 (at sea level)
+zFRONT_AREA  = 0.5;    % m^2 dummy value
+zBANK_ANGLE  = 20;     % degrees dummy value
+zTURN_ANGLE  = 180;    % degrees
 
-%
-% debug mode will include some extra prints to show code running
+fprintf("using constants:\n");
+fprintf("CRUISE_DIST = %0.0f m      | ", zCRUISE_DIST);
+fprintf("DRAG_COEFF  = %0.2f \n",        zDRAG_COEFF);
+fprintf("ACCEL_G     = %0.2f m/s^2 | ",  zACCEL_G);
+fprintf("AIR_DENS_SL = %0.4f kg/m^3\n",  zAIR_DENS_SL);
+fprintf("FRONT_AREA  = %0.2f m^2   | ",  zFRONT_AREA);
+fprintf("BANK_ANGLE  = %0.0f deg\n",     zBANK_ANGLE);
+fprintf("TURN_ANGLE  = %0.0f deg\n",     zTURN_ANGLE);
+fprintf("\n");
+
+
+% debug mode includes some extra prints to show code running
 DEBUG = true;
 % change this variable to enable / disable debug mode
-%
-
-fprintf("using constants (modify in code): \n");
-fprintf("CRUISE_DIST = %0.0f m         | ", CRUISE_DIST);
-fprintf("DRAG_COEFF  = %0.2f \n", DRAG_COEFF);
-fprintf("ACCEL_G     = %0.2f m/s^2    | ", ACCEL_G);
-fprintf("AIR_DENS_SL = %0.4f kg/m^3\n", AIR_DENS_SL);
-fprintf("FRONT_AREA  = %0.2f m^2      | ", FRONT_AREA);
-fprintf("BANK_ANGLE  = %0.0f deg\n", BANK_ANGLE);
-fprintf("TURN_ANGLE  = %0.0f deg\n", TURN_ANGLE);
-fprintf("\n");
 if (DEBUG)
     fprintf("{DBG} debug mode: ENABLED\n");
-else
-    fprintf("{DBG} debug mode: DISABLED\n");
 end
 fprintf("\n");
-
-% WHAT THE FUCK IS A GLOBAL VARIABLE, IN THIS HOUSE WE PASS EVERYTHING IN
-% oh yeah and as stated with the constants, I AM NOT LEARNING CLASSES YET
-function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, speed, FRONT_AREA)
-    forceDrag = 1/2 * AIR_DENS_SL * DRAG_COEFF * (speed^2) * FRONT_AREA;
-end
 
 totalTime = 0;
 
 % find takeoff time
 v = 0;
 v_prev = 0;
+itr = 0;
 t_step = 0.001; % increase this step for more accurate time calc
 distToCruise = 0;
 timeToCruise = 0;
-% kinda hacky workaround for having compounding functions :3
+% this is a compounding function :3
 % its basically just a sequence where a_n is modified a_(n-1)
+if (DEBUG)
+    fprintf("{DBG} starting takeoff loop\n")
+end
 while (v < speed)
+    itr = itr + 1;
     v_prev = v;
     distToCruise = distToCruise + (v_prev * t_step);
-    accelWithDrag = ((thrust - forceDrag(AIR_DENS_SL, DRAG_COEFF, v, FRONT_AREA)) / mass);
+    forceDrag = 1/2 * zAIR_DENS_SL * zDRAG_COEFF * (speed^2) * zFRONT_AREA;
+    accelWithDrag = ((thrust - forceDrag) / mass);
     v = v + accelWithDrag * t_step;
     timeToCruise = timeToCruise + t_step;
     % added just in case drag equalizes with thrust and it stop
     % this might never execute now because it gets overwhelmed by the
     % takeoff space check, but ill leave it just in case
     if (v >= speed)
+        if (DEBUG)
+            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr)
+        end
         fprintf("[TKF] time to %d m/s from 0 is: %0.3fs\n", speed, timeToCruise);
         fprintf("      traveled: %0.2f m\n", distToCruise);
         fprintf("\n");
     elseif (v_prev == v)
+        if (DEBUG)
+            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr);
+        end
         v = speed; % break out of loop
         fprintf("[TKF] could not compute time to speed, drag may be too powerful :(\n");
         fprintf("{ERR} max speed achieved: %0.2f after %0.3fs\n", v_prev,timeToCruise);
@@ -141,28 +143,42 @@ while (v < speed)
         fprintf("\n");
     end
     % in case takeoff needs more space than provided
-    if (distToCruise > CRUISE_DIST)
+    if (distToCruise > zCRUISE_DIST)
+        if (DEBUG)
+            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr);
+        end
         v = speed;
-        fprintf("[TKF] takeoff distance exceeds cruise space of %0.0f m!\n", CRUISE_DIST)
+        fprintf("[TKF] takeoff distance exceeds cruise space of %0.0f m!\n", zCRUISE_DIST);
         fprintf("{ERR} retry with new values!\n");
         fprintf("      traveled %0.2f\n", distToCruise);
         fprintf("\n");
     end
+    % in case velocity is negative
+    if (v < 0)
+        if (DEBUG)
+            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr);
+        end
+        v = speed;
+        fprintf("[TKF] takeoff velocity became negative\n");
+        fprintf("{ERR} not sure why, try new values...\n");
+        fprintf("\n");
+    end
 end
+
 % deallocate variables that are no longer used
-clearvars v v_prev t_step
+clearvars v v_prev t_step itr
 
 % find cruise time
-timeStraight = CRUISE_DIST / speed;
-fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", CRUISE_DIST, timeStraight)
-fprintf("      total cruise time is: %0.2fs\n", timeStraight * 18)
+timeCruise = zCRUISE_DIST / speed;
+fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", zCRUISE_DIST, timeCruise);
+fprintf("      total cruise time is: %0.2fs\n", timeCruise * 18);
 fprintf("\n");
 % 18 = 20 straight (500m) sections minus 2 for takeoff / landing (18=20-2)
 
 % find turn time
-turnRadius = (speed^2) / (ACCEL_G * tand(BANK_ANGLE)); % m
-arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);  % m
-turnRate = ACCEL_G * tand(BANK_ANGLE) / speed;         % rad ?
+turnRadius = (speed^2) / (zACCEL_G * tand(zBANK_ANGLE)); % m
+arcLength = 2 * pi * turnRadius * (zTURN_ANGLE / 360);  % m
+turnRate = zACCEL_G * tand(zBANK_ANGLE) / speed;         % rad ?
 % debug prints for turning
 if (DEBUG)
     fprintf("{DBG} turn radius found: %0.2f m\n", turnRadius);
@@ -170,24 +186,24 @@ if (DEBUG)
     fprintf("      turn rate found: %0.2frad/s\n", turnRate);
 end
 % double check those turn values just in case
-turnTime = TURN_ANGLE / turnRate;
+turnTime = deg2rad(zTURN_ANGLE) / turnRate;
 fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
-fprintf("      total turn time found: %0.2f s\n", turnTime * 10)
+fprintf("      total turn time found: %0.2f s\n", turnTime * 10);
 fprintf("\n");
 % 10 = 2 turns per lap, over 5 laps (10=2*5)
 
 %
-% HEY CHECK THOSE TURN TIMES, IT SHOULD NOT BE TAKING OVER AN HOUR TO
-% TURN!!!
-%
+% OK using deg2rad in L183 (turnTime = ...) seems to help, still not sure
+% if its accurate!
+% NOTE TURN TIME DOES NOT INCORPORATE RADIUS / ARC LENGTH
+% 
 
 % add time of takeoff stretch (1)
 totalTime = totalTime + timeToCruise;
 % add time of cruise sections (18)
-totalTime = totalTime + timeStraight * 18;
+totalTime = totalTime + timeCruise * 18;
 % add time of the turn sections (10)
 totalTime = totalTime + turnTime * 10;
 
 % total time of flight
-fprintf("[TOT] total time: %0.2fs\n", totalTime);
-fprintf("      total time: %0.2fm\n", totalTime / 60);
+fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
