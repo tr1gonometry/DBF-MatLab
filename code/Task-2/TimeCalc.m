@@ -50,8 +50,8 @@ clc, clear, format compact
 % v = a * t
 % force_drag = AIR_DENS_SL * DRAG_COEFF * 1/2 * V^2 * FRONT_AREA
 % turn_radius = V^2 / (G * tan(BANK_ANGLE))
-% v = r * w (angular vel)
-% w = theta / t
+% w = theta / t (angular velocity)
+% v = r * w (convert ang to linear)
 % 180 deg = 1 * pi rad
 
 % for testing i have been using 100, 5, and 100 respectively
@@ -76,32 +76,31 @@ fprintf("\n");
 % and i REFUSE to learn matlab classes
 CRUISE_DIST = 500;           % meters (distance to middle of a cruise!)
 DRAG_COEFF  = 0.01;          % dummy value
-ACCEL_CRAFT = thrust / mass; % m / s^2
 ACCEL_G     = 9.81;          % m / s^2
 AIR_DENS_SL = 1.2250;        % kg / m^3 (at sea level)
 FRONT_AREA  = 0.5;           % m^2 dummy value
 BANK_ANGLE  = 20;            % degrees dummy value
-TURN_ANGLE  = 90;            % degrees
+TURN_ANGLE  = 180;           % degrees
 
 %
 % debug mode will include some extra prints to show code running
-DEBUG = false;
+DEBUG = true;
 % change this variable to enable / disable debug mode
 %
 
 fprintf("using constants (modify in code): \n");
 fprintf("CRUISE_DIST = %0.0f m         | ", CRUISE_DIST);
 fprintf("DRAG_COEFF  = %0.2f \n", DRAG_COEFF);
-fprintf("ACCEL_CRAFT = %0.2f m/s^2    | ", ACCEL_CRAFT);
-fprintf("ACCEL_G     = %0.2f m/s^2\n", ACCEL_G);
-fprintf("AIR_DENS_SL = %0.4f kg/m^3 | ", AIR_DENS_SL);
-fprintf("FRONT_AREA  = %0.2f m^2\n", FRONT_AREA);
-fprintf("BANK_ANGLE  = %0.0f deg        | ", BANK_ANGLE);
+fprintf("ACCEL_G     = %0.2f m/s^2    | ", ACCEL_G);
+fprintf("AIR_DENS_SL = %0.4f kg/m^3\n", AIR_DENS_SL);
+fprintf("FRONT_AREA  = %0.2f m^2      | ", FRONT_AREA);
+fprintf("BANK_ANGLE  = %0.0f deg\n", BANK_ANGLE);
 fprintf("TURN_ANGLE  = %0.0f deg\n", TURN_ANGLE);
+fprintf("\n");
 if (DEBUG)
-    fprintf("debug mode: ENABLED\n");
+    fprintf("{DBG} debug mode: ENABLED\n");
 else
-    fprintf("debug mode: DISABLED\n");
+    fprintf("{DBG} debug mode: DISABLED\n");
 end
 fprintf("\n");
 
@@ -109,12 +108,6 @@ fprintf("\n");
 % oh yeah and as stated with the constants, I AM NOT LEARNING CLASSES YET
 function forceDrag = forceDrag(AIR_DENS_SL, DRAG_COEFF, speed, FRONT_AREA)
     forceDrag = 1/2 * AIR_DENS_SL * DRAG_COEFF * (speed^2) * FRONT_AREA;
-    % https://en.wikipedia.org/wiki/Drag_equation#
-end
-
-function findTurnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE)
-    findTurnRadius = (speed^2) / (ACCEL_G * tan(BANK_ANGLE));
-    % https://www.flightschoolusa.com/bank-angle-1-ultimate-guide-to-performance/
 end
 
 totalTime = 0;
@@ -130,7 +123,8 @@ timeToCruise = 0;
 while (v < speed)
     v_prev = v;
     distToCruise = distToCruise + (v_prev * t_step);
-    v = v + ((thrust - forceDrag(AIR_DENS_SL, DRAG_COEFF, v, FRONT_AREA)) / mass) * t_step;
+    accelWithDrag = ((thrust - forceDrag(AIR_DENS_SL, DRAG_COEFF, v, FRONT_AREA)) / mass);
+    v = v + accelWithDrag * t_step;
     timeToCruise = timeToCruise + t_step;
     % added just in case drag equalizes with thrust and it stop
     % this might never execute now because it gets overwhelmed by the
@@ -166,9 +160,9 @@ fprintf("\n");
 % 18 = 20 straight (500m) sections minus 2 for takeoff / landing (18=20-2)
 
 % find turn time
-turnRadius = findTurnRadius(speed, ACCEL_G, BANK_ANGLE);
-arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);
-turnRate = ((ACCEL_G * tan(BANK_ANGLE)) / speed);
+turnRadius = (speed^2) / (ACCEL_G * tand(BANK_ANGLE)); % m
+arcLength = 2 * pi * turnRadius * (TURN_ANGLE / 360);  % m
+turnRate = ACCEL_G * tand(BANK_ANGLE) / speed;         % rad ?
 % debug prints for turning
 if (DEBUG)
     fprintf("{DBG} turn radius found: %0.2f m\n", turnRadius);
@@ -176,7 +170,7 @@ if (DEBUG)
     fprintf("      turn rate found: %0.2frad/s\n", turnRate);
 end
 % double check those turn values just in case
-turnTime = (turnRadius * TURN_ANGLE) / speed;
+turnTime = TURN_ANGLE / turnRate;
 fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
 fprintf("      total turn time found: %0.2f s\n", turnTime * 10)
 fprintf("\n");
