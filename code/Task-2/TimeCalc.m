@@ -80,6 +80,7 @@ zAIR_DENS_SL = 1.2250; % kg / m^3 (at sea level)
 zFRONT_AREA  = 0.5;    % m^2 dummy value
 zBANK_ANGLE  = 20;     % degrees dummy value
 zTURN_ANGLE  = 180;    % degrees
+zLAP_COUNT   = 5;      %
 
 fprintf("using constants:\n");
 fprintf("CRUISE_DIST = %0.0f m      | ", zCRUISE_DIST);
@@ -88,9 +89,9 @@ fprintf("ACCEL_G     = %0.2f m/s^2 | ",  zACCEL_G);
 fprintf("AIR_DENS_SL = %0.4f kg/m^3\n",  zAIR_DENS_SL);
 fprintf("FRONT_AREA  = %0.2f m^2   | ",  zFRONT_AREA);
 fprintf("BANK_ANGLE  = %0.0f deg\n",     zBANK_ANGLE);
-fprintf("TURN_ANGLE  = %0.0f deg\n",     zTURN_ANGLE);
+fprintf("TURN_ANGLE  = %0.0f deg    | ", zTURN_ANGLE);
+fprintf("LAP_COUNT   = %0.0f\n",         zLAP_COUNT);
 fprintf("\n");
-
 
 % debug mode includes some extra prints to show code running
 DEBUG = true;
@@ -134,7 +135,7 @@ while (v < speed)
         fprintf("\n");
     elseif (v_prev == v)
         if (DEBUG)
-            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr);
+            fprintf("{DBG} exited takeoff calcs in %d steps\n", itr);
         end
         v = speed; % break out of loop
         fprintf("[TKF] could not compute time to speed, drag may be too powerful :(\n");
@@ -145,7 +146,7 @@ while (v < speed)
     % in case takeoff needs more space than provided
     if (distToCruise > zCRUISE_DIST)
         if (DEBUG)
-            fprintf("{DBG} completed takeoff calcs in %d steps\n", itr);
+            fprintf("{DBG} exited takeoff calcs in %d steps\n", itr);
         end
         v = speed;
         fprintf("[TKF] takeoff distance exceeds cruise space of %0.0f m!\n", zCRUISE_DIST);
@@ -164,16 +165,14 @@ while (v < speed)
         fprintf("\n");
     end
 end
-
 % deallocate variables that are no longer used
 clearvars v v_prev t_step itr
 
 % find cruise time
-timeCruise = zCRUISE_DIST / speed;
-fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", zCRUISE_DIST, timeCruise);
-fprintf("      total cruise time is: %0.2fs\n", timeCruise * 18);
+cruiseTime = zCRUISE_DIST / speed;
+fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", zCRUISE_DIST, cruiseTime);
+fprintf("      total cruise time is: %0.2fs\n", cruiseTime * 18);
 fprintf("\n");
-% 18 = 20 straight (500m) sections minus 2 for takeoff / landing (18=20-2)
 
 % find turn time
 turnRadius = (speed^2) / (zACCEL_G * tand(zBANK_ANGLE)); % m
@@ -190,20 +189,59 @@ turnTime = deg2rad(zTURN_ANGLE) / turnRate;
 fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
 fprintf("      total turn time found: %0.2f s\n", turnTime * 10);
 fprintf("\n");
-% 10 = 2 turns per lap, over 5 laps (10=2*5)
 
 %
-% OK using deg2rad in L183 (turnTime = ...) seems to help, still not sure
+% OK using deg2rad in L190 (turnTime = ...) seems to help, still not sure
 % if its accurate!
 % NOTE TURN TIME DOES NOT INCORPORATE RADIUS / ARC LENGTH
-% 
+%
 
-% add time of takeoff stretch (1)
-totalTime = totalTime + timeToCruise;
-% add time of cruise sections (18)
-totalTime = totalTime + timeCruise * 18;
-% add time of the turn sections (10)
-totalTime = totalTime + turnTime * 10;
+% circle time calcs
+% literally just double the turn time (it already works for 180 deg)
+% and do that 5 times... (turnTime * 2 * 5
+circleTime = turnTime * 2;
+fprintf("[CRL] circle time found: %0.2f\n", circleTime);
+fprintf("\n");
+
+% calc total time
+for (i = [1:5])
+    if (DEBUG)
+        fprintf("{DBG} Step %d\n", i);
+    end
+    % only skip the first straight stretch
+    if (i ~= 1)
+        if (DEBUG)
+            fprintf("      added cruise time\n");
+        end
+        totalTime = totalTime + cruiseTime;
+    else
+        if (DEBUG)
+            fprintf("      added takeoff time\n");
+            fprintf("      added remaining time after takeoff\n");
+        end
+        % add whatever dist is not covered by takeoff
+        totalTime = totalTime + timeToCruise;
+        totalTime = totalTime + ((zCRUISE_DIST - distToCruise) / speed);
+    end
+    if (DEBUG); fprintf("      added turn time\n"); end
+    totalTime = totalTime + turnTime;
+    if (DEBUG); fprintf("      added cruise time\n"); end
+    totalTime = totalTime + cruiseTime;
+    if (DEBUG); fprintf("      added circle time\n"); end
+    totalTime = totalTime + circleTime;
+    if (DEBUG); fprintf("      added cruise time\n"); end
+    totalTime = totalTime + cruiseTime;
+    if (DEBUG); fprintf("      added turn time\n"); end
+    totalTime = totalTime + turnTime;
+    if (i ~= 5)
+        if (DEBUG); fprintf("      added cruise time\n"); end
+        totalTime = totalTime + cruiseTime;
+    else
+        % add landing time!
+    end
+end
 
 % total time of flight
 fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
+
+% get code review from senior team
