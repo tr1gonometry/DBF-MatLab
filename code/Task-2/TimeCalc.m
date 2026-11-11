@@ -67,7 +67,20 @@ thrust = input("applied thrust (N): ");
 while (~any(thrust) || thrust < 0)
     thrust = input("must be n > 0... ");
 end
+dbg = lower(input("enable debug (y/n)? ", "s"));
+switch (dbg)
+    case ("y")
+        DEBUG = true;
+        fprintf("\n{DBG} debug enabled!\n");
+    case ("n")
+        DEBUG = false;
+        fprintf("\n{DBG} debug disabled!\n");
+    otherwise
+        DEBUG = false;
+        fprintf("\n{DBG} invalid input, disabling debug\n");
+end
 fprintf("\n");
+
 
 % variables in full uppercase are constants
 % do not modify them during execution
@@ -91,14 +104,6 @@ fprintf("FRONT_AREA  = %0.2f m^2   | ",  zFRONT_AREA);
 fprintf("BANK_ANGLE  = %0.0f deg\n",     zBANK_ANGLE);
 fprintf("TURN_ANGLE  = %0.0f deg    | ", zTURN_ANGLE);
 fprintf("LAP_COUNT   = %0.0f\n",         zLAP_COUNT);
-fprintf("\n");
-
-% debug mode includes some extra prints to show code running
-DEBUG = true;
-% change this variable to enable / disable debug mode
-if (DEBUG)
-    fprintf("{DBG} debug mode: ENABLED\n");
-end
 fprintf("\n");
 
 totalTime = 0;
@@ -129,10 +134,10 @@ while (v < speed)
     if (v >= speed)
         if (DEBUG)
             fprintf("{DBG} completed takeoff calcs in %d steps\n", itr)
+            fprintf("[TKF] time to %d m/s from 0 is: %0.3fs\n", speed, timeToCruise);
+            fprintf("      traveled: %0.2f m\n", distToCruise);
+            fprintf("\n");
         end
-        fprintf("[TKF] time to %d m/s from 0 is: %0.3fs\n", speed, timeToCruise);
-        fprintf("      traveled: %0.2f m\n", distToCruise);
-        fprintf("\n");
     elseif (v_prev == v)
         if (DEBUG)
             fprintf("{DBG} exited takeoff calcs in %d steps\n", itr);
@@ -170,9 +175,11 @@ clearvars v v_prev t_step itr
 
 % find cruise time
 cruiseTime = zCRUISE_DIST / speed;
-fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", zCRUISE_DIST, cruiseTime);
-fprintf("      total cruise time is: %0.2fs\n", cruiseTime * 18);
-fprintf("\n");
+if (DEBUG)
+    fprintf("[CRU] cruise time over %0.0fm found: %0.2fs\n", zCRUISE_DIST, cruiseTime);
+    fprintf("      total cruise time is: %0.2fs\n", cruiseTime * 18);
+    fprintf("\n");
+end
 
 % find turn time
 turnRadius = (speed^2) / (zACCEL_G * tand(zBANK_ANGLE)); % m
@@ -186,9 +193,11 @@ if (DEBUG)
 end
 % double check those turn values just in case
 turnTime = deg2rad(zTURN_ANGLE) / turnRate;
-fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
-fprintf("      total turn time found: %0.2f s\n", turnTime * 10);
-fprintf("\n");
+if (DEBUG)
+    fprintf("[TRN] turn time found: %0.2f s\n", turnTime);
+    fprintf("      total turn time found: %0.2f s\n", turnTime * 10);
+    fprintf("\n");
+end
 
 %
 % OK using deg2rad in L190 (turnTime = ...) seems to help, still not sure
@@ -200,8 +209,10 @@ fprintf("\n");
 % literally just double the turn time (it already works for 180 deg)
 % and do that 5 times... (turnTime * 2 * 5
 circleTime = turnTime * 2;
-fprintf("[CRL] circle time found: %0.2f\n", circleTime);
-fprintf("\n");
+if (DEBUG)
+    fprintf("[CRL] circle time found: %0.2f\n", circleTime);
+    fprintf("\n");
+end
 
 % calc total time
 for (i = [1:5])
@@ -244,4 +255,5 @@ end
 % total time of flight
 fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
 
-% get code review from senior team
+% remember that drag will impact turns
+% also speed is non-constant during turns
