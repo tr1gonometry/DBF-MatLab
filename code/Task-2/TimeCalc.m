@@ -260,10 +260,15 @@ end
 % total time of flight
 fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
 
+% reminders:
 % remember that drag will impact turns
+
 % also speed is non-constant during turns
+
 % create a formula for the drag coeff based on Fx
 % \ ref: https://www.autodesk.com/support/technical/article/caas/tsarticles/ts/2P7gnfKohR8Rz8LWmu0UvG.html
+
+% turns currently dont use the arc length
 
 % NO AI
 % I prefer my shitty codebase made by HUMAN HANDS
