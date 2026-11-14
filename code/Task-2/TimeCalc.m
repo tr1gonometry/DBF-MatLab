@@ -258,4 +258,6 @@ fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
 % remember that drag will impact turns
 % also speed is non-constant during turns
 
-% NO AI, FUCK AI
+% NO AI
+% I prefer my shitty codebase made by HUMAN HANDS
+% FUCK AI
