@@ -235,8 +235,8 @@ for (i = [1:5])
             fprintf("      added takeoff time\n");
             fprintf("      added remaining time after takeoff\n");
         end
-        % add whatever dist is not covered by takeoff
         totalTime = totalTime + timeToCruise;
+        % add whatever dist is not covered by takeoff
         totalTime = totalTime + ((zCRUISE_DIST - distToCruise) / speed);
     end
     if (DEBUG); fprintf("      added turn time\n"); end
