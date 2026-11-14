@@ -15,7 +15,7 @@ clc, clear, format compact
 %    :  360 here (tp mid)  :
 %   /: - - - - -:- - - - - :\
 %  ( : start line (bt mid) : )
-%   \: _:_ _ _ _:_ _ _ _:_ :/
+%   \: -:- - - -:- - - -:- :/
 %    :  :--runway here--:  :
 %    :   500m   :   500m   :
 %    :                     :
