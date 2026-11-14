@@ -1,4 +1,4 @@
-% By Marco Murphy and 
+% By Marco Murphy and . . . 
 clc, clear, format compact
 
 % Project requirements
@@ -108,6 +108,10 @@ fprintf("\n");
 
 totalTime = 0;
 
+% ok so apparently matlab makes global variables a PAIN so i will
+% not be using functions lest I have to pass in EVERY VARIABLE
+% WHAT THE FUCK IS A GLOBAL VAR IN THIS HOUSE WE PASS EVERYTHING IN!!!
+
 % find takeoff time
 v = 0;
 v_prev = 0;
@@ -115,6 +119,7 @@ itr = 0;
 t_step = 0.001; % increase this step for more accurate time calc
 distToCruise = 0;
 timeToCruise = 0;
+% behold my codeslop!
 % this is a compounding function :3
 % its basically just a sequence where a_n is modified a_(n-1)
 if (DEBUG)
@@ -257,6 +262,8 @@ fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
 
 % remember that drag will impact turns
 % also speed is non-constant during turns
+% create a formula for the drag coeff based on Fx
+% \ ref: https://www.autodesk.com/support/technical/article/caas/tsarticles/ts/2P7gnfKohR8Rz8LWmu0UvG.html
 
 % NO AI
 % I prefer my shitty codebase made by HUMAN HANDS
