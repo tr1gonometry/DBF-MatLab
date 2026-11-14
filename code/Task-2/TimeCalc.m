@@ -200,7 +200,7 @@ if (DEBUG)
 end
 
 %
-% OK using deg2rad in L190 (turnTime = ...) seems to help, still not sure
+% OK using deg2rad in (turnTime = deg2rad(...) seems to help, still not sure
 % if its accurate!
 % NOTE TURN TIME DOES NOT INCORPORATE RADIUS / ARC LENGTH
 %
@@ -257,3 +257,5 @@ fprintf("[TOT] total time: %0.2fs (%0.2fm)\n", totalTime, totalTime / 60);
 
 % remember that drag will impact turns
 % also speed is non-constant during turns
+
+% NO AI, FUCK AI
