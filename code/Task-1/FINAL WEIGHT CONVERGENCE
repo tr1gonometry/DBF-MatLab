@@ -1,0 +1,93 @@
+clear
+clc
+
+% Enter weights in newtons
+PayloadWeight = input('Enter payload weight (N): ');
+EmptyAircraftWeight = input('Enter empty aircraft weight (N): ');
+BatteryWeight = input('Enter estimated battery weight (N): ');
+
+% Enter flight information
+CruiseSpeed = input('Enter cruise speed (m/s): ');
+TakeoffDistance = input('Enter takeoff distance (m): ');
+Thrust = input('Enter thrust (N): ');
+
+% Enter aircraft information
+WingArea = input('Enter wing area (m^2): ');
+LiftCoefficient = input('Enter lift coefficient: ');
+DragCoefficient = input('Enter drag coefficient: ');
+FrictionCoefficient = input('Enter friction coefficient: ');
+
+% Enter battery information
+BatteryEnergyDensity = input('Enter battery energy density (Wh/kg): ');
+MotorEfficiency = input('Enter motor efficiency as a decimal: ');
+
+% Constants
+g = 9.8;
+AirDensity = 1.225;
+UsableBattery = 0.80;       % 80% usable, 20% remains
+
+% Start the iteration
+Difference = 1;
+
+while Difference > 0.01
+
+    % Calculate current takeoff weight and mass
+    TakeoffWeight = EmptyAircraftWeight + PayloadWeight ...
+                    + BatteryWeight;
+
+    AircraftMass = TakeoffWeight / g;
+
+    % Calculate lift
+    Lift = 0.5 * AirDensity * CruiseSpeed^2 ...
+           * WingArea * LiftCoefficient;
+
+    % Calculate drag
+    Drag = 0.5 * AirDensity * CruiseSpeed^2 ...
+           * WingArea * DragCoefficient;
+
+    % Calculate friction
+    NormalForce = TakeoffWeight - Lift;
+
+    if NormalForce < 0
+        NormalForce = 0;
+    end
+
+    Friction = FrictionCoefficient * NormalForce;
+
+    % Calculate net force and acceleration
+    NetForce = Thrust - Drag - Friction;
+    Acceleration = NetForce / AircraftMass;
+
+    % Check if the aircraft can take off
+    if Acceleration <= 0
+        error('Thrust is not large enough for takeoff.');
+    end
+
+    % Calculate energy needed for takeoff
+    KineticEnergy = 0.5 * AircraftMass * CruiseSpeed^2;
+    DragEnergy = Drag * TakeoffDistance;
+    FrictionEnergy = Friction * TakeoffDistance;
+
+    TotalEnergyUsed = (KineticEnergy + DragEnergy + FrictionEnergy) ...
+                      / MotorEfficiency / 3600;
+
+    % Include the 20% battery energy reserve
+    TotalBatteryEnergy = TotalEnergyUsed / UsableBattery;
+
+    % Calculate the new battery weight
+    BatteryMass = TotalBatteryEnergy / BatteryEnergyDensity;
+    NewBatteryWeight = BatteryMass * g;
+
+    % Compare the old and new battery weights
+    Difference = abs(NewBatteryWeight - BatteryWeight);
+
+    % Update the battery weight
+    BatteryWeight = NewBatteryWeight;
+
+end
+
+% Calculate final takeoff weight
+TakeoffWeight = EmptyAircraftWeight + PayloadWeight + BatteryWeight;
+
+% Display only the final result
+fprintf('Final takeoff weight: %.2f N\n', TakeoffWeight);
